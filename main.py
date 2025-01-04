@@ -31,9 +31,10 @@ class DrawingApp:
         # Настройка элементов управления интерфейса.
         self.setup_ui()
 
-        # Начальные значения…
-        self.last_x, self.last_y = None, None  # координат положения…
-        self.brush_color = 'black'  # и цвета кисти.
+        # Начальные значения
+        self.last_x, self.last_y = None, None  # координат положения,
+        self.brush_color = 'black'  # цвета кисти
+        self.eraser_color = 'white'  # и цвета ластика.
 
         # Привязка обработчиков событий к холсту для отслеживания движений мыши при рисовании (<B1-Motion>)
         # и сброса состояния кисти при отпускании кнопки мыши (<ButtonRelease-1>).
@@ -74,6 +75,10 @@ class DrawingApp:
         self.brush_size_scale = tk.Scale(control_frame, from_=1, to=10, command=self.set_brush_size_option,
                                          orient=tk.HORIZONTAL)
         self.brush_size_scale.pack(side=tk.LEFT)
+
+        # Создание кнопки «Ластик».
+        self.eraser_button = tk.Button(control_frame, text='Ластик', command=self.press_eraser, relief='raised')
+        self.eraser_button.pack(side=tk.LEFT)
 
     def paint(self, event):
         """
@@ -136,6 +141,18 @@ class DrawingApp:
         :param event: Событие.
         """
         self.brush_size.set(str(self.brush_size_scale.get()))
+
+    def press_eraser(self):
+        """
+        Нажатие на кнопку «Ластик».
+        """
+        if self.eraser_button.config('relief')[-1] == 'raised':
+            # Включение ластика.
+            self.eraser_button.config(relief='sunken')
+        else:  # Выключение ластика.
+            self.eraser_button.config(relief='raised')
+        # Обмен цветами кисти и ластика.
+        self.eraser_color, self.brush_color = self.brush_color, self.eraser_color
 
 
 def main():
