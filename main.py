@@ -41,6 +41,9 @@ class DrawingApp:
         self.canvas.bind('<B1-Motion>', self.paint)
         self.canvas.bind('<ButtonRelease-1>', self.reset)
 
+        # Пипетка для выбора цвета с холста.
+        self.canvas.bind('<Button-3>', self.pick_color)
+
     def setup_ui(self):
         """
         Настройка элементов управления интерфейса.
@@ -101,6 +104,14 @@ class DrawingApp:
         :param event: Событие <ButtonRelease-1> означает окончание рисования линии.
         """
         self.last_x, self.last_y = None, None
+
+    def pick_color(self, event):
+        """
+        Пипетка для выбора цвета с холста.
+        :param event: Событие <Button-3> означает взятие цвета с холста.
+        """
+        rgb = self.image.getpixel((event.x, event.y))
+        self.brush_color = '#' + ''.join([f'{c:02X}' for c in rgb])
 
     def clear_canvas(self):
         """
