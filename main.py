@@ -44,6 +44,10 @@ class DrawingApp:
         # Пипетка для выбора цвета с холста.
         self.canvas.bind('<Button-3>', self.pick_color)
 
+        # Горячие клавиши для быстрых действий.
+        self.root.bind('<Control-s>', self.save_image)  # Сохранить.
+        self.root.bind('<Control-c>', self.choose_color)  # Выбрать цвет.
+
     def setup_ui(self):
         """
         Настройка элементов управления интерфейса.
@@ -121,13 +125,13 @@ class DrawingApp:
         self.image = Image.new("RGB", (600, 400), "white")
         self.draw = ImageDraw.Draw(self.image)
 
-    def choose_color(self):
+    def choose_color(self, event):
         """
         Изменение цвета кисти, используя стандартное диалоговое окно выбора цвета.
         """
         self.brush_color = colorchooser.askcolor(color=self.brush_color)[1]
 
-    def save_image(self):
+    def save_image(self, event):
         """
         Сохранение изображения, используя стандартное диалоговое окно сохранения файла.
         Поддерживает только формат PNG. В случае успешного сохранения выводится сообщение об успешном сохранении.
