@@ -57,7 +57,7 @@ python main.py
 <div align="center">
 
 ## Скриншоты
-![20250104170322970.jpg](README_images/20250104170322970.jpg)<br>
+![20250114192705274.jpg](README_images/20250114192705274.jpg)<br>
 Окно приложения с чистым холстом.
 
 ![20241228185332115.jpg](README_images/20241228185332115.jpg)<br>

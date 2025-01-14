@@ -28,9 +28,6 @@ class DrawingApp:
         self.canvas = tk.Canvas(root, width=600, height=400, bg='white')
         self.canvas.pack()
 
-        # Настройка элементов управления интерфейса.
-        self.setup_ui()
-
         # Начальные значения
         self.last_x, self.last_y = None, None  # координат положения,
         self.brush_color = 'black'  # цвета кисти
@@ -48,6 +45,9 @@ class DrawingApp:
         self.root.bind('<Control-s>', self.save_image)  # Сохранить.
         self.root.bind('<Control-c>', self.choose_color)  # Выбрать цвет.
 
+        # Настройка элементов управления интерфейса.
+        self.setup_ui()
+
     def setup_ui(self):
         """
         Настройка элементов управления интерфейса.
@@ -55,6 +55,10 @@ class DrawingApp:
         # Создание панели управления.
         control_frame = tk.Frame(self.root)
         control_frame.pack(fill=tk.X)
+
+        # Создание кнопки «Сохранить».
+        save_button = tk.Button(control_frame, text="Сохранить", command=self.save_image)
+        save_button.pack(side=tk.LEFT)
 
         # Создание кнопки «Очистить».
         clear_button = tk.Button(control_frame, text="Очистить", command=self.clear_canvas)
@@ -64,9 +68,9 @@ class DrawingApp:
         color_button = tk.Button(control_frame, text="Выбрать цвет", command=self.choose_color)
         color_button.pack(side=tk.LEFT)
 
-        # Создание кнопки «Сохранить».
-        save_button = tk.Button(control_frame, text="Сохранить", command=self.save_image)
-        save_button.pack(side=tk.LEFT)
+        # Создание метки-образца текущего цвета кисти.
+        self.brush_color_label = tk.Label(control_frame, bg=self.brush_color, height=1, width=3)
+        self.brush_color_label.pack(side=tk.LEFT)
 
         # Объект StringVar, хранящий текущее значение размера кисти.
         self.brush_size = tk.StringVar(value='1')
@@ -86,6 +90,10 @@ class DrawingApp:
         # Создание кнопки «Ластик».
         self.eraser_button = tk.Button(control_frame, text='Ластик', command=self.press_eraser, relief='raised')
         self.eraser_button.pack(side=tk.LEFT)
+
+        # Создание метки-образца текущего цвета второй кисти (ластика).
+        self.eraser_color_label = tk.Label(control_frame, bg=self.eraser_color, height=1, width=3)
+        self.eraser_color_label.pack(side=tk.LEFT)
 
     def paint(self, event):
         """
@@ -109,6 +117,12 @@ class DrawingApp:
         """
         self.last_x, self.last_y = None, None
 
+    def change_color(self):
+        if self.eraser_button.config('relief')[-1] == 'raised':
+            self.brush_color_label['bg'] = self.brush_color
+        else:
+            self.eraser_color_label['bg'] = self.brush_color
+
     def pick_color(self, event):
         """
         Пипетка для выбора цвета с холста.
@@ -116,22 +130,9 @@ class DrawingApp:
         """
         rgb = self.image.getpixel((event.x, event.y))
         self.brush_color = '#' + ''.join([f'{c:02X}' for c in rgb])
+        self.change_color()
 
-    def clear_canvas(self):
-        """
-        Очистка холста (и объекта рисования).
-        """
-        self.canvas.delete("all")
-        self.image = Image.new("RGB", (600, 400), "white")
-        self.draw = ImageDraw.Draw(self.image)
-
-    def choose_color(self, event):
-        """
-        Изменение цвета кисти, используя стандартное диалоговое окно выбора цвета.
-        """
-        self.brush_color = colorchooser.askcolor(color=self.brush_color)[1]
-
-    def save_image(self, event):
+    def save_image(self):
         """
         Сохранение изображения, используя стандартное диалоговое окно сохранения файла.
         Поддерживает только формат PNG. В случае успешного сохранения выводится сообщение об успешном сохранении.
@@ -142,6 +143,21 @@ class DrawingApp:
                 file_path += '.png'
             self.image.save(file_path)
             messagebox.showinfo("Информация", "Изображение успешно сохранено!")
+
+    def clear_canvas(self):
+        """
+        Очистка холста (и объекта рисования).
+        """
+        self.canvas.delete("all")
+        self.image = Image.new("RGB", (600, 400), "white")
+        self.draw = ImageDraw.Draw(self.image)
+
+    def choose_color(self):
+        """
+        Изменение цвета кисти, используя стандартное диалоговое окно выбора цвета.
+        """
+        self.brush_color = colorchooser.askcolor(color=self.brush_color)[1]
+        self.change_color()
 
     def set_brush_size_scale(self, event):
         """
