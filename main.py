@@ -2,7 +2,7 @@
 Программа для создания изображений на основе TKinter.
 """
 import tkinter as tk
-from tkinter import colorchooser, filedialog, messagebox
+from tkinter import colorchooser, filedialog, messagebox, simpledialog
 from PIL import Image, ImageDraw
 
 
@@ -10,22 +10,24 @@ class DrawingApp:
     """
     Приложение для создания изображений с графическим интерфейсом TKinter.
     """
-    def __init__(self, root):
+    def __init__(self, root, w=600, h=400):
         """
         Конструктор приложения с графическим интерфейсом.
         :param root: Окно приложения.
+        :param w: Ширина холста.
+        :param h: Высота холста.
         """
         self.root = root
         self.root.title("Рисовалка с сохранением в PNG")  # Установка заголовка окна приложения.
 
         # Создание объекта изображения (виртуального холста).
-        self.image = Image.new("RGB", (600, 400), "white")
+        self.image = Image.new("RGB", (w, h), "white")
 
         # Инициализация объекта, позволяющего рисовать на объекте изображения (виртуальном холсте).
         self.draw = ImageDraw.Draw(self.image)
 
         # Создание виджета Canvas Tkinter, который отображает графический интерфейс для рисования.
-        self.canvas = tk.Canvas(root, width=600, height=400, bg='white')
+        self.canvas = tk.Canvas(root, width=w, height=h, bg='white')
         self.canvas.pack()
 
         # Начальные значения
@@ -53,23 +55,23 @@ class DrawingApp:
         Настройка элементов управления интерфейса.
         """
         # Создание панели управления.
-        control_frame = tk.Frame(self.root)
-        control_frame.pack(fill=tk.X)
+        self.control_frame = tk.Frame(self.root)
+        self.control_frame.pack(fill=tk.X)
 
         # Создание кнопки «Сохранить».
-        save_button = tk.Button(control_frame, text="Сохранить", command=self.save_image)
+        save_button = tk.Button(self.control_frame, text="Сохранить", command=self.save_image)
         save_button.pack(side=tk.LEFT)
 
         # Создание кнопки «Очистить».
-        clear_button = tk.Button(control_frame, text="Очистить", command=self.clear_canvas)
+        clear_button = tk.Button(self.control_frame, text="Очистить", command=self.clear_canvas)
         clear_button.pack(side=tk.LEFT)
 
         # Создание кнопки «Выбрать цвет».
-        color_button = tk.Button(control_frame, text="Выбрать цвет", command=self.choose_color)
+        color_button = tk.Button(self.control_frame, text="Выбрать цвет", command=self.choose_color)
         color_button.pack(side=tk.LEFT)
 
         # Создание метки-образца текущего цвета кисти.
-        self.brush_color_label = tk.Label(control_frame, bg=self.brush_color, height=1, width=3)
+        self.brush_color_label = tk.Label(self.control_frame, bg=self.brush_color, height=1, width=3)
         self.brush_color_label.pack(side=tk.LEFT)
 
         # Объект StringVar, хранящий текущее значение размера кисти.
@@ -77,23 +79,27 @@ class DrawingApp:
 
         # Создание выпадающего списка для выбора размера кисти. Интервал выбора: [1, 10].
         # При изменении текущего значения, меняется и текущее значение слайдера.
-        self.brush_size_option = tk.OptionMenu(control_frame, self.brush_size, *[str(i) for i in range(1, 11)],
-                                               command=self.set_brush_size_scale)
+        self.brush_size_option = tk.OptionMenu(self.control_frame, self.brush_size,
+                                               *[str(i) for i in range(1, 11)], command=self.set_brush_size_scale)
         self.brush_size_option.pack(side=tk.LEFT)
 
         # Создание слайдера для изменения размера кисти в интервале [1, 10].
         # При изменении текущего значения, меняется и текущее значение выпадающего списка.
-        self.brush_size_scale = tk.Scale(control_frame, from_=1, to=10, command=self.set_brush_size_option,
+        self.brush_size_scale = tk.Scale(self.control_frame, from_=1, to=10, command=self.set_brush_size_option,
                                          orient=tk.HORIZONTAL)
         self.brush_size_scale.pack(side=tk.LEFT)
 
         # Создание кнопки «Ластик».
-        self.eraser_button = tk.Button(control_frame, text='Ластик', command=self.press_eraser, relief='raised')
+        self.eraser_button = tk.Button(self.control_frame, text='Ластик', command=self.press_eraser, relief='raised')
         self.eraser_button.pack(side=tk.LEFT)
 
         # Создание метки-образца текущего цвета второй кисти (ластика).
-        self.eraser_color_label = tk.Label(control_frame, bg=self.eraser_color, height=1, width=3)
+        self.eraser_color_label = tk.Label(self.control_frame, bg=self.eraser_color, height=1, width=3)
         self.eraser_color_label.pack(side=tk.LEFT)
+
+        # Создание кнопки «Размер холста».
+        holst_size_button = tk.Button(self.control_frame, text='Размер холста', command=self.choose_holst_size)
+        holst_size_button.pack(side=tk.RIGHT)
 
     def paint(self, event):
         """
@@ -184,6 +190,36 @@ class DrawingApp:
             self.eraser_button.config(relief='raised')
         # Обмен цветами кисти и ластика.
         self.eraser_color, self.brush_color = self.brush_color, self.eraser_color
+
+    def choose_holst_size(self):
+        """
+        Выбор размера холста.
+        """
+        title = 'Выбор размера холста'
+        a = tk.messagebox.askyesno(title,'Рекомендуется сохранить текущее изображение перед сменой холста.\n'
+                                         'Удалить текущее изображение?')
+        if a:
+            w = tk.simpledialog.askinteger(title, 'Ширина нового холста:')
+            if not w:  # Второй шанс возврата к холсту.
+                return
+            h = tk.simpledialog.askinteger(title, 'Высота нового холста:')
+            if not h:  # Третий шанс возврата к холсту.
+                return
+
+            # Сохранение параметров.
+            bc = self.brush_color
+            ec = self.eraser_color
+            bs = self.brush_size
+
+            self.control_frame.destroy()  # Уничтожение панели управления.
+            self.canvas.destroy()  # Уничтожение рабочей области.
+            self.__init__(self.root, w, h)  # Новая инициация.
+
+            # Восстановление параметров.
+            self.brush_color_label['bg'] = self.brush_color = bc
+            self.eraser_color_label['bg'] = self.eraser_color = ec
+            self.brush_size_scale.set(int(bs.get()))
+            self.brush_size.set(str(self.brush_size_scale.get()))
 
 
 def main():
