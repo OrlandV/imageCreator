@@ -10,7 +10,7 @@ class DrawingApp:
     """
     Приложение для создания изображений с графическим интерфейсом TKinter.
     """
-    def __init__(self, root, w=600, h=400):
+    def __init__(self, root, w: int = 600, h: int = 400, bg: str = "white"):
         """
         Конструктор приложения с графическим интерфейсом.
         :param root: Окно приложения.
@@ -21,14 +21,17 @@ class DrawingApp:
         self.root.title("Рисовалка с сохранением в PNG")  # Установка заголовка окна приложения.
 
         # Создание объекта изображения (виртуального холста).
-        self.image = Image.new("RGB", (w, h), "white")
+        self.image = Image.new("RGB", (w, h), bg)
 
         # Инициализация объекта, позволяющего рисовать на объекте изображения (виртуальном холсте).
         self.draw = ImageDraw.Draw(self.image)
 
         # Создание виджета Canvas Tkinter, который отображает графический интерфейс для рисования.
-        self.canvas = tk.Canvas(root, width=w, height=h, bg='white')
+        self.canvas = tk.Canvas(root, width=w, height=h, bg=bg)
         self.canvas.pack()
+
+        # Размеры холста.
+        self.sizes = (w, h)
 
         # Начальные значения
         self.last_x, self.last_y = None, None  # координат положения,
@@ -97,9 +100,17 @@ class DrawingApp:
         self.eraser_color_label = tk.Label(self.control_frame, bg=self.eraser_color, height=1, width=3)
         self.eraser_color_label.pack(side=tk.LEFT)
 
+        # Создание кнопки «Текст».
+        self.text_button = tk.Button(self.control_frame, text='Текст', command=self.ask_text)
+        self.text_button.pack(side=tk.LEFT)
+
         # Создание кнопки «Размер холста».
         holst_size_button = tk.Button(self.control_frame, text='Размер холста', command=self.choose_holst_size)
         holst_size_button.pack(side=tk.RIGHT)
+
+        # Создание кнопки «Изменить фон».
+        change_background_button = tk.Button(self.control_frame, text='Изменить фон', command=self.change_background)
+        change_background_button.pack(side=tk.RIGHT)
 
     def paint(self, event):
         """
@@ -107,9 +118,8 @@ class DrawingApp:
         :param event: Событие <B1-Motion> содержит координаты мыши, которые используются для рисования.
         """
         if self.last_x and self.last_y:
-            self.canvas.create_line(self.last_x, self.last_y, event.x, event.y,
-                                    width=int(self.brush_size.get()), fill=self.brush_color,
-                                    capstyle=tk.ROUND, smooth=tk.TRUE)
+            self.canvas.create_line(self.last_x, self.last_y, event.x, event.y, capstyle=tk.ROUND,
+                                    fill=self.brush_color, smooth=tk.TRUE, width=int(self.brush_size.get()))
             self.draw.line([self.last_x, self.last_y, event.x, event.y], fill=self.brush_color,
                            width=int(self.brush_size.get()))
 
@@ -150,13 +160,15 @@ class DrawingApp:
             self.image.save(file_path)
             messagebox.showinfo("Информация", "Изображение успешно сохранено!")
 
-    def clear_canvas(self):
+    def clear_canvas(self, bg: str = "white"):
         """
         Очистка холста (и объекта рисования).
+        :param bg: Цвет фона.
         """
         self.canvas.delete("all")
-        self.image = Image.new("RGB", (600, 400), "white")
+        self.image = Image.new("RGB", self.sizes, bg)
         self.draw = ImageDraw.Draw(self.image)
+        self.canvas.config(width=self.sizes[0], height=self.sizes[1], bg=bg)
 
     def choose_color(self):
         """
@@ -191,35 +203,88 @@ class DrawingApp:
         # Обмен цветами кисти и ластика.
         self.eraser_color, self.brush_color = self.brush_color, self.eraser_color
 
+    def text_raised(self):
+        """
+        Возврат кнопки «Текст» в исходное состояние.
+        """
+        self.text_button.config(relief='raised')
+        self.__delattr__('text')
+
+    def add_text(self, event):
+        """
+        Добавление текста на изображение.
+        :param event: Событие <B1-Motion> содержит координаты мыши, которые используются для вставки текста.
+        """
+        self.canvas.unbind('<Button-1>')
+        self.draw.text((event.x, event.y), self.text, fill=self.brush_color)
+        self.canvas.create_text(event.x, event.y, fill=self.brush_color, text=self.text)
+        self.text_raised()
+
+    def ask_text(self):
+        """
+        Запрос текста от пользователя.
+        """
+        self.text_button.config(relief='sunken')
+        self.text = simpledialog.askstring('Ввод текста', 'Добавляемый текст:')
+        if self.text:
+            self.canvas.bind('<Button-1>', self.add_text)
+        else:
+            self.text_raised()
+
     def choose_holst_size(self):
         """
         Выбор размера холста.
         """
         title = 'Выбор размера холста'
-        a = tk.messagebox.askyesno(title,'Рекомендуется сохранить текущее изображение перед сменой холста.\n'
-                                         'Удалить текущее изображение?')
+        a = messagebox.askyesno(title, 'Рекомендуется сохранить текущее изображение перед сменой холста.\n'
+                                       'Удалить текущее изображение?')
         if a:
-            w = tk.simpledialog.askinteger(title, 'Ширина нового холста:')
+            w = simpledialog.askinteger(title, 'Ширина нового холста:')
             if not w:  # Второй шанс возврата к холсту.
                 return
-            h = tk.simpledialog.askinteger(title, 'Высота нового холста:')
+            h = simpledialog.askinteger(title, 'Высота нового холста:')
             if not h:  # Третий шанс возврата к холсту.
                 return
 
-            # Сохранение параметров.
-            bc = self.brush_color
-            ec = self.eraser_color
-            bs = self.brush_size
+            self.sizes = (w, h)
+            self.clear_canvas(self.canvas['bg'])
 
-            self.control_frame.destroy()  # Уничтожение панели управления.
-            self.canvas.destroy()  # Уничтожение рабочей области.
-            self.__init__(self.root, w, h)  # Новая инициация.
+            # # Сохранение параметров.
+            # bc = self.brush_color
+            # ec = self.eraser_color
+            # bs = self.brush_size
+            #
+            # self.control_frame.destroy()  # Уничтожение панели управления.
+            # self.canvas.destroy()  # Уничтожение рабочей области.
+            # self.__init__(self.root, w, h)  # Новая инициация.
+            #
+            # # Восстановление параметров.
+            # self.brush_color_label['bg'] = self.brush_color = bc
+            # self.eraser_color_label['bg'] = self.eraser_color = ec
+            # self.brush_size_scale.set(int(bs.get()))
+            # self.brush_size.set(str(self.brush_size_scale.get()))
 
-            # Восстановление параметров.
-            self.brush_color_label['bg'] = self.brush_color = bc
-            self.eraser_color_label['bg'] = self.eraser_color = ec
-            self.brush_size_scale.set(int(bs.get()))
-            self.brush_size.set(str(self.brush_size_scale.get()))
+    def change_background(self):
+        """
+        Изменение цвета фона.
+        """
+        title = 'Изменение цвета фона'
+        a = messagebox.askyesnocancel(
+            title,
+            'Для сохранения нового фона в изображении нажмите «Да».\n'
+            'Для смены фона холста без сохранения нового фона в изображении нажмите «Нет».\n'
+            'Для отмены — «Отмена».'
+        )
+        if a:
+            a = messagebox.askyesno(
+                title,
+                'Рекомендуется сохранить текущее изображение перед изменением цвета фона, т.к. произойдёт заливка.\n'
+                'Удалить текущее изображение?'
+            )
+            if a:
+                self.clear_canvas(colorchooser.askcolor()[1])
+        elif a is False:
+            self.canvas.config(bg=colorchooser.askcolor()[1])
 
 
 def main():
